@@ -1,41 +1,38 @@
 import qrcode
+import base64
+import json
+from PIL import Image
 
 class QRGenerator:
     @staticmethod
-    def generate_qr(data: dict, file_path: str):
-        """
-        Genera un código QR con los datos proporcionados y lo guarda en un archivo .png.
-        
-        Args:
-            data (dict): Información del estudiante (matrícula, nombre, carrera, carro).
-            file_path (str): Ruta del archivo para guardar el QR (debe terminar en .png).
-        """
+    def generate_qr_with_image(data: dict, file_path: str, image_path: str = None):
         try:
-            # Asegúrate de que el archivo tenga extensión .png
             if not file_path.lower().endswith(".png"):
                 file_path += ".png"
 
-            # Formatea los datos en un string legible para el QR
-            formatted_data = (
-                f"Matrícula: {data['matricula']}\n"
-                f"Nombre: {data['nombre']}\n"
-                f"Carrera: {data['carrera']}\n"
-                f"Carro: {data['carro']}"
-            )
+            formatted_data = {
+                "matricula": data.get("matricula"),
+                "nombre": data.get("nombre"),
+                "carrera": data.get("carrera"),
+                "carro": data.get("carro"),
+            }
 
-            # Configuración y generación del QR
+            if image_path:
+                with open(image_path, "rb") as img_file:
+                    image_base64 = base64.b64encode(img_file.read()).decode("utf-8")
+                    formatted_data["image"] = image_base64
+
             qr = qrcode.QRCode(
-                version=1,
-                error_correction=qrcode.constants.ERROR_CORRECT_L,
+                version=None,  # Ajusta automáticamente el tamaño del QR
+                error_correction=qrcode.constants.ERROR_CORRECT_H,
                 box_size=10,
                 border=4,
             )
-            qr.add_data(formatted_data)
+            qr.add_data(json.dumps(formatted_data))
             qr.make(fit=True)
 
-            # Generar la imagen
-            img = qr.make_image(fill_color="black", back_color="white")
-            img.save(file_path)  # Guardar como .png
+            qr_image = qr.make_image(fill_color="black", back_color="white")
+            qr_image.save(file_path)
 
             print(f"QR generado y guardado como: {file_path}")
         except Exception as e:
